@@ -21,7 +21,7 @@ internal sealed class MetricsWriter(TextWriter writer) : IDisposable
             this.hasHeader = true;
         }
 
-        await this.writer.WriteLineAsync($"{category}, {string.Equals(expected, result, StringComparison.OrdinalIgnoreCase)}, {expected.ToUpperInvariant()}, {result}, \"{duration}\", \"{input}\"");
+        await this.writer.WriteLineAsync($"{category}, {string.Equals(expected, result, StringComparison.OrdinalIgnoreCase)}, {expected.ToUpperInvariant()}, {result}, {duration}, {input}");
     }
 
     public void Dispose()
