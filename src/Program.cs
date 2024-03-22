@@ -1,4 +1,5 @@
-﻿using Microsoft.SemanticKernel.Connectors.OpenAI;
+﻿using Microsoft.SemanticKernel.ChatCompletion;
+using Microsoft.SemanticKernel.Connectors.OpenAI;
 using System.Diagnostics;
 
 namespace Quorum;
@@ -6,7 +7,7 @@ namespace Quorum;
 internal class Program
 {
     private const double DemoTemperature = 0.3;
-    private const int DemoIterations = 2;
+    private const int DemoIterations = 10;
     private const int DemoQuorum = 3;
 
     private enum Demo
@@ -48,7 +49,7 @@ internal class Program
     private static async Task RunDiscreteAsync()
     {
         var plugin =
-            new DiscretePlugin(CreateChatCompletionService(), instruction)
+            new DiscretePlugin(CreateChatCompletionService(), CreatePrompt())
             {
                 ExecutionSettings = new()
                 {
@@ -64,7 +65,7 @@ internal class Program
     private static async Task RunQuorumAsync(int quorumCount = 3)
     {
         var plugin =
-            new QuorumPlugin(CreateChatCompletionService(), instruction)
+            new QuorumPlugin(CreateChatCompletionService(), CreatePrompt())
             {
                 ExecutionSettings = new()
                 {
@@ -115,13 +116,20 @@ internal class Program
         return MetricsWriter.CreateFromFile(plugin.GetType(), quorumCount);
     }
 
-    private static readonly string instruction =
-        """
-        Think step-by-step to evaluate the meaning of the user message with the goal of categorizing as: question, statement, or both.
-        Respond only with the categorization.
-        Evaluate based on how the user message could be interpreted by a listener.
-        A question could be a statement intended to elicit a response from the listener, if so categorize as both.
-        """;
+    private static ChatHistory CreatePrompt()
+    {
+        var history = new ChatHistory();
+
+        history.AddSystemMessage(
+            """
+            Think step-by-step to evaluate the intent of the user message with the goal of categorizing as: question, statement, or both.
+            Respond only with the categorization.
+            A question could be a statement intended to elicit a response from the listener, if so categorize as both.
+            A question that is missing a question mark should be categorized as question.
+            """);
+
+        return history;
+    }
 
     private static readonly Question[] questions =
         [

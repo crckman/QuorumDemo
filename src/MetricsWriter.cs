@@ -10,7 +10,7 @@ internal sealed class MetricsWriter(TextWriter writer) : IDisposable
     {
         var timestamp = DateTime.Now;
 
-        return new(File.CreateText(Path.Combine(Config.ResultPath, $"{pluginType.Name}-{(quorumCount.HasValue ? $"{quorumCount.Value}-" : string.Empty)}{Config.ModelName}-{timestamp:yyMMdd-HHmmss}.txt")));
+        return new(File.CreateText(Path.Combine(Config.ResultPath, $"{pluginType.Name}-{(quorumCount.HasValue ? $"{quorumCount.Value}-" : string.Empty)}{Config.ModelName}-{timestamp:yyMMdd-HHmmss}.csv")));
     }
 
     public async Task WriteAsync(string category, string expected, string? result, TimeSpan duration, string input)
