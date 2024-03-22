@@ -24,7 +24,7 @@ public abstract class DemoPlugin
     protected static string ProcessResult(ChatMessageContent m)
     {
         var result = CleanResult(m.Content) ?? string.Empty;
-        System.Console.WriteLine($"> {result}"); // $$$
+
         return result;
     }
 

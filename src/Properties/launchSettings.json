@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "QuorumDemo": {
+      "commandName": "Project",
+      "commandLineArgs": ""
+    }
+  }
+}

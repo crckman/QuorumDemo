@@ -117,15 +117,17 @@ internal class Program
 
     private static readonly string instruction =
         """
-        Think step-by-step to evaulate the meaning of the most recent user message.
-        Respond only with question, statement, or both in determination of whether the most recent user message could be interpreted as a question or statement.
+        Think step-by-step to evaluate the meaning of the user message with the goal of categorizing as: question, statement, or both.
+        Respond only with the categorization.
+        Evaluate based on how the user message could be interpreted by a listener.
+        A question could be a statement intended to elicit a response from the listener, if so categorize as both.
         """;
 
     private static readonly Question[] questions =
         [
             new("are you cool", QuestionResult.Question, QuestionCategory.Control),
             new("i am cool", QuestionResult.Statement, QuestionCategory.Control),
-            new("i am cool?", QuestionResult.Question, QuestionCategory.Control),
+            new("i am cool?", QuestionResult.Both, QuestionCategory.Control),
             new("i am curious on what you think", QuestionResult.Both, QuestionCategory.Experiment),
             new("huh, would ya look at that?", QuestionResult.Both, QuestionCategory.Experiment),
         ];
