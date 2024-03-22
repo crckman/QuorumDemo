@@ -6,8 +6,8 @@ namespace Quorum;
 
 internal class Program
 {
-    private const double DemoTemperature = 0.3;
-    private const int DemoIterations = 10;
+    private const double DemoTemperature = 1;
+    private const int DemoIterations = 1;
     private const int DemoQuorum = 3;
 
     private enum Demo
@@ -35,6 +35,8 @@ internal class Program
             return;
         }
 
+        var demo = new SentenceTypeDemo();
+
         if (flavor == Demo.Discrete || flavor == Demo.Both)
         {
             await RunDiscreteAsync();
@@ -44,65 +46,82 @@ internal class Program
         {
             await RunQuorumAsync(quorumCount: DemoQuorum);
         }
-    }
 
-    private static async Task RunDiscreteAsync()
-    {
-        var plugin =
-            new DiscretePlugin(CreateChatCompletionService(), CreatePrompt())
-            {
-                ExecutionSettings = new()
+        async Task RunDiscreteAsync()
+        {
+            var plugin =
+                new DiscretePlugin(CreateChatCompletionService(), demo.CreatePrompt())
                 {
-                    Temperature = DemoTemperature,
-                }
-            };
+                    ExecutionSettings = new()
+                    {
+                        Temperature = DemoTemperature,
+                    }
+                };
 
-        using var writer = CreateWriter(plugin);
+            using var writer = CreateWriter(plugin);
 
-        await RunDemoAsync(plugin, writer, iterations: DemoIterations);
-    }
+            await RunDemoAsync(plugin, demo, writer, iterations: DemoIterations);
+        }
 
-    private static async Task RunQuorumAsync(int quorumCount = 3)
-    {
-        var plugin =
-            new QuorumPlugin(CreateChatCompletionService(), CreatePrompt())
-            {
-                ExecutionSettings = new()
+        async Task RunQuorumAsync(int quorumCount = 3)
+        {
+            var plugin =
+                new QuorumPlugin(CreateChatCompletionService(), demo.CreatePrompt())
                 {
-                    Temperature = DemoTemperature,
-                    ResultsPerPrompt = quorumCount,
-                }
-            };
+                    ExecutionSettings = new()
+                    {
+                        Temperature = DemoTemperature,
+                        ResultsPerPrompt = quorumCount,
+                    }
+                };
 
-        using var writer = CreateWriter(plugin, quorumCount);
+            using var writer = CreateWriter(plugin, quorumCount);
 
-        await RunDemoAsync(plugin, writer, iterations: DemoIterations);
+            await RunDemoAsync(plugin, demo, writer, iterations: DemoIterations);
+        }
+
+        MetricsWriter CreateWriter(DemoPlugin plugin, int? quorumCount = null)
+        {
+            return MetricsWriter.CreateFromFile(plugin.GetType(), demo.GetType(), quorumCount);
+        }
     }
 
-    private static async Task RunDemoAsync(DemoPlugin plugin, MetricsWriter writer, int iterations = 1)
+    public static async Task RunDemoAsync<TResult>(DemoPlugin plugin, QuorumDemo<TResult> demo, MetricsWriter writer, int iterations = 1) where TResult : Enum
     {
+        int questionNumber = 1;
+        int questionSuccess = 0;
+        int questionCount = 0;
         for (int index = 0; index < iterations; ++index)
         {
-            Console.WriteLine($"\n# {index}");
-            foreach (var question in questions)
+            questionNumber = 1;
+            Console.WriteLine($"\n# {index:00}");
+            foreach (var question in demo.GetQuestions())
             {
                 try
                 {
                     var timer = Stopwatch.StartNew();
                     var result = await plugin.InvokeResult(question.Text);
-                    await WriteAsync(question, result ?? "-", timer.Elapsed);
+                    if (await WriteAsync(question, result ?? "-", timer.Elapsed))
+                    {
+                        ++questionSuccess;
+                    }
                 }
                 catch (Exception exception)
                 {
                     Console.WriteLine($"FAIL: {exception.Message}");
                 }
+
+                ++questionNumber;
+                ++questionCount;
             }
         }
 
-        async Task WriteAsync(Question question, string result, TimeSpan duration)
+        Console.WriteLine($"{questionSuccess}/{questionCount}");
+
+        async Task<bool> WriteAsync(Question<TResult> question, string result, TimeSpan duration)
         {
-            Console.WriteLine($"{question.Expected.ToString().ToUpperInvariant()} ?== {result} ({question.Category})");
-            await (writer.WriteAsync(question.Category.ToString(), question.Expected.ToString().ToUpperInvariant(), result, duration, question.Text) ?? Task.CompletedTask);
+            Console.WriteLine($"- {questionNumber:00} {question.Expected.ToString().ToUpperInvariant()} ?== {result} ({question.Category})");
+            return await writer.WriteAsync(question.Category.ToString(), question.Expected.ToString().ToUpperInvariant(), result, duration, question.Text);
         }
     }
 
@@ -110,48 +129,4 @@ internal class Program
     {
         return new OpenAIChatCompletionService(Config.ModelName, Config.ApiKey);
     }
-
-    private static MetricsWriter CreateWriter(DemoPlugin plugin, int? quorumCount = null)
-    {
-        return MetricsWriter.CreateFromFile(plugin.GetType(), quorumCount);
-    }
-
-    private static ChatHistory CreatePrompt()
-    {
-        var history = new ChatHistory();
-
-        history.AddSystemMessage(
-            """
-            Think step-by-step to evaluate the intent of the user message with the goal of categorizing as: question, statement, or both.
-            Respond only with the categorization.
-            A question could be a statement intended to elicit a response from the listener, if so categorize as both.
-            A question that is missing a question mark should be categorized as question.
-            """);
-
-        return history;
-    }
-
-    private static readonly Question[] questions =
-        [
-            new("are you cool", QuestionResult.Question, QuestionCategory.Control),
-            new("i am cool", QuestionResult.Statement, QuestionCategory.Control),
-            new("i am cool?", QuestionResult.Both, QuestionCategory.Control),
-            new("i am curious on what you think", QuestionResult.Both, QuestionCategory.Experiment),
-            new("huh, would ya look at that?", QuestionResult.Both, QuestionCategory.Experiment),
-        ];
-
-    private enum QuestionResult
-    {
-        Question,
-        Statement,
-        Both,
-    }
-
-    private enum QuestionCategory
-    {
-        Control,
-        Experiment,
-    }
-
-    private record Question(string Text, QuestionResult Expected, QuestionCategory Category);
 }
