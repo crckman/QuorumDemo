@@ -13,7 +13,7 @@ internal sealed class MetricsWriter(TextWriter writer) : IDisposable
         return new(File.CreateText(Path.Combine(Config.ResultPath, $"{pluginType.Name}-{(quorumCount.HasValue ? $"{quorumCount.Value}-" : string.Empty)}{Config.ModelName}-{timestamp:yyMMdd-HHmmss}.csv")));
     }
 
-    public async Task WriteAsync(string category, string expected, string? result, TimeSpan duration, string input)
+    public async Task<bool> WriteAsync(string category, string expected, string? result, TimeSpan duration, string input)
     {
         if (!this.hasHeader)
         {
@@ -21,7 +21,11 @@ internal sealed class MetricsWriter(TextWriter writer) : IDisposable
             this.hasHeader = true;
         }
 
-        await this.writer.WriteLineAsync($"{category}, {string.Equals(expected, result, StringComparison.OrdinalIgnoreCase)}, {expected.ToUpperInvariant()}, {result}, {duration}, {input}");
+        var isSuccess = string.Equals(expected, result, StringComparison.OrdinalIgnoreCase);
+
+        await this.writer.WriteLineAsync($"{category}, {isSuccess}, {expected.ToUpperInvariant()}, {result}, {duration}, {input}");
+
+        return isSuccess;
     }
 
     public void Dispose()
