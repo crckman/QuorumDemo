@@ -5,7 +5,7 @@ using Microsoft.SemanticKernel.ChatCompletion;
 using Microsoft.SemanticKernel.Connectors.OpenAI;
 using System.Threading.Tasks;
 
-public abstract class DemoPlugin
+public abstract class DemoStrategy
 {
     protected readonly IChatCompletionService aiService;
     protected readonly ChatHistory prompt;
@@ -51,13 +51,13 @@ public abstract class DemoPlugin
         return new string(buffer, startIndex: 0, length);
     }
 
-    public DemoPlugin(IChatCompletionService aiService, ChatHistory prompt)
+    public DemoStrategy(IChatCompletionService aiService, ChatHistory prompt)
     {
         this.aiService = aiService;
         this.prompt = prompt;
     }
 
-    public DemoPlugin(IChatCompletionService aiService, string prompt)
+    public DemoStrategy(IChatCompletionService aiService, string prompt)
     {
         this.aiService = aiService;
         this.prompt = new ChatHistory(systemMessage: prompt);

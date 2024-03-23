@@ -5,10 +5,8 @@ using Microsoft.SemanticKernel.ChatCompletion;
 using System.ComponentModel;
 using System.Threading.Tasks;
 
-public class DiscretePlugin : DemoPlugin
+public class DiscreteStrategy : DemoStrategy
 {
-    [KernelFunction]
-    [Description("$$$ DYNAMIC")]
     public override async Task<string?> InvokeResult(string input, CancellationToken cancellationToken = default)
     {
         var query = new ChatHistory(this.prompt);
@@ -21,12 +19,12 @@ public class DiscretePlugin : DemoPlugin
         return result;
     }
 
-    public DiscretePlugin(IChatCompletionService aiService, ChatHistory prompt)
+    public DiscreteStrategy(IChatCompletionService aiService, ChatHistory prompt)
         : base(aiService, prompt)
     {
     }
 
-    public DiscretePlugin(IChatCompletionService aiService, string prompt)
+    public DiscreteStrategy(IChatCompletionService aiService, string prompt)
         : base(aiService, prompt)
     {
     }

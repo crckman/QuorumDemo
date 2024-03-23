@@ -1,4 +1,5 @@
-﻿using Microsoft.SemanticKernel.ChatCompletion;
+﻿#pragma warning disable SKEXP0010 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
+
 using Microsoft.SemanticKernel.Connectors.OpenAI;
 using System.Diagnostics;
 
@@ -35,7 +36,7 @@ internal class Program
             return;
         }
 
-        var demo = new SentenceTypeDemo();
+        var demo = new AnotherDemo();
 
         if (flavor == Demo.Discrete || flavor == Demo.Both)
         {
@@ -50,7 +51,7 @@ internal class Program
         async Task RunDiscreteAsync()
         {
             var plugin =
-                new DiscretePlugin(CreateChatCompletionService(), demo.CreatePrompt())
+                new DiscreteStrategy(CreateChatCompletionService(), demo.CreatePrompt())
                 {
                     ExecutionSettings = new()
                     {
@@ -66,7 +67,7 @@ internal class Program
         async Task RunQuorumAsync(int quorumCount = 3)
         {
             var plugin =
-                new QuorumPlugin(CreateChatCompletionService(), demo.CreatePrompt())
+                new QuorumStrategy(CreateChatCompletionService(), demo.CreatePrompt())
                 {
                     ExecutionSettings = new()
                     {
@@ -80,15 +81,17 @@ internal class Program
             await RunDemoAsync(plugin, demo, writer, iterations: DemoIterations);
         }
 
-        MetricsWriter CreateWriter(DemoPlugin plugin, int? quorumCount = null)
+        MetricsWriter CreateWriter(DemoStrategy plugin, int? quorumCount = null)
         {
             return MetricsWriter.CreateFromFile(plugin.GetType(), demo.GetType(), quorumCount);
         }
     }
 
-    public static async Task RunDemoAsync<TResult>(DemoPlugin plugin, QuorumDemo<TResult> demo, MetricsWriter writer, int iterations = 1) where TResult : Enum
+    public static async Task RunDemoAsync<TResult>(DemoStrategy plugin, QuorumDemo<TResult> demo, MetricsWriter writer, int iterations = 1) where TResult : Enum
     {
-        int questionNumber = 1;
+        plugin.ExecutionSettings!.ResponseFormat = demo.JsonMode ? (object?)"json_object" : null;
+
+        int questionNumber;
         int questionSuccess = 0;
         int questionCount = 0;
         for (int index = 0; index < iterations; ++index)

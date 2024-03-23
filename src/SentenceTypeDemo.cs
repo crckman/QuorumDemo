@@ -1,6 +1,6 @@
-﻿using Microsoft.SemanticKernel.ChatCompletion;
+﻿namespace Quorum;
 
-namespace Quorum;
+using Microsoft.SemanticKernel.ChatCompletion;
 
 internal sealed class SentenceTypeDemo : QuorumDemo<SentenceType>
 {

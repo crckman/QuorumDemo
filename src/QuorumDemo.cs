@@ -1,10 +1,11 @@
-﻿
-using Microsoft.SemanticKernel.ChatCompletion;
+﻿namespace Quorum;
 
-namespace Quorum;
+using Microsoft.SemanticKernel.ChatCompletion;
 
 public abstract class QuorumDemo<TResult> where TResult : Enum
 {
+    public virtual bool JsonMode => false;
+
     public abstract ChatHistory CreatePrompt();
 
     public abstract IEnumerable<Question<TResult>> GetQuestions();
